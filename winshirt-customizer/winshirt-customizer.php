@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WinShirt 3D Customizer
  * Description: Configurateur 3D avancé pour WooCommerce avec gestion des zones d'impression, exports HD et intégration complète front/back-office.
- * Version: 1.0.2
+ * Version: 1.0.4
  * Author: OpenAI Assistant
  * Text Domain: winshirt-customizer
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WINSHIRT_CUSTOMIZER_VERSION', '1.0.2');
+define('WINSHIRT_CUSTOMIZER_VERSION', '1.0.4');
 define('WINSHIRT_CUSTOMIZER_PATH', plugin_dir_path(__FILE__));
 define('WINSHIRT_CUSTOMIZER_URL', plugin_dir_url(__FILE__));
 

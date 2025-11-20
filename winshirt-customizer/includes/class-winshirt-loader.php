@@ -17,6 +17,7 @@ class Winshirt_Customizer_Loader
         add_action('admin_menu', [__CLASS__, 'register_admin_pages']);
         add_action('woocommerce_add_cart_item_data', [__CLASS__, 'inject_cart_metadata'], 10, 3);
         add_filter('upload_mimes', [__CLASS__, 'allow_3d_uploads']);
+        add_filter('wp_check_filetype_and_ext', [__CLASS__, 'normalize_3d_filetypes'], 10, 4);
     }
 
     public static function register_shortcodes(): void
@@ -69,6 +70,14 @@ class Winshirt_Customizer_Loader
 
         wp_enqueue_media();
 
+        wp_enqueue_script(
+            'three',
+            'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.min.js',
+            [],
+            WINSHIRT_CUSTOMIZER_VERSION,
+            true
+        );
+
         wp_enqueue_style(
             'winshirt-customizer-admin',
             WINSHIRT_CUSTOMIZER_URL . 'assets/css/admin.css',
@@ -78,7 +87,7 @@ class Winshirt_Customizer_Loader
         wp_enqueue_script(
             'winshirt-customizer-admin',
             WINSHIRT_CUSTOMIZER_URL . 'assets/js/admin.js',
-            ['jquery'],
+            ['jquery', 'three'],
             WINSHIRT_CUSTOMIZER_VERSION,
             true
         );
@@ -125,8 +134,23 @@ class Winshirt_Customizer_Loader
     {
         $mimes['glb'] = 'model/gltf-binary';
         $mimes['gltf'] = 'model/gltf+json';
-        $mimes['obj'] = 'model/obj';
+        $mimes['obj'] = 'text/plain';
 
         return $mimes;
+    }
+
+    public static function normalize_3d_filetypes($data, $file, $filename, $mimes)
+    {
+        $filetype = wp_check_filetype($filename, $mimes);
+
+        if (in_array($filetype['ext'], ['glb', 'gltf', 'obj'], true)) {
+            return [
+                'ext' => $filetype['ext'],
+                'type' => $filetype['type'] ?: ($mimes[$filetype['ext']] ?? ''),
+                'proper_filename' => $data['proper_filename'],
+            ];
+        }
+
+        return $data;
     }
 }
