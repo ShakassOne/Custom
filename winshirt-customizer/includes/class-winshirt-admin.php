@@ -55,14 +55,15 @@ class Winshirt_Customizer_Admin
         $settings = $this->get_settings();
         if (isset($_POST['winshirt_customizer_settings'])) {
             check_admin_referer('winshirt_customizer_settings');
-            $settings['mockups3d'] = array_values(array_map(fn($item) => [
-                'name' => sanitize_text_field($item['name'] ?? ''),
-                'front' => esc_url_raw($item['front'] ?? ''),
-                'back' => esc_url_raw($item['back'] ?? ''),
-                'sleeve_left' => esc_url_raw($item['sleeve_left'] ?? ''),
-                'sleeve_right' => esc_url_raw($item['sleeve_right'] ?? ''),
-                'texture' => esc_url_raw($item['texture'] ?? ''),
-            ], $_POST['winshirt_customizer_settings']['mockups3d'] ?? []));
+            $settings['mockups3d'] = array_values(array_map(function ($item) {
+                $file = $item['file'] ?? $item['front'] ?? '';
+
+                return [
+                    'name' => sanitize_text_field($item['name'] ?? ''),
+                    'file' => esc_url_raw($file),
+                    'texture' => esc_url_raw($item['texture'] ?? ''),
+                ];
+            }, $_POST['winshirt_customizer_settings']['mockups3d'] ?? []));
             $this->save_settings($settings);
             add_settings_error('winshirt_customizer', 'saved', __('Mockups 3D mis à jour.', 'winshirt-customizer'), 'updated');
         }
