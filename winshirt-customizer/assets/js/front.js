@@ -15,9 +15,49 @@
         layers: [],
         history: [],
         future: [],
+        productIndex: 0,
     };
 
+    const products = Array.isArray(window.WinshirtCustomizerData?.mockups3d)
+        ? window.WinshirtCustomizerData.mockups3d
+        : [];
+    const availableZones = Array.isArray(window.WinshirtCustomizerData?.zones)
+        ? window.WinshirtCustomizerData.zones
+        : [];
+
     const overlayRect = () => overlay.getBoundingClientRect();
+
+    function getActiveProduct() {
+        if (!products.length) return null;
+        const index = Math.min(Math.max(0, state.productIndex), products.length - 1);
+        return products[index];
+    }
+
+    function getActiveZone() {
+        const product = getActiveProduct();
+        const productZone = product?.zones?.find((zone) => (zone.face || 'front') === state.face);
+        if (productZone) return productZone;
+        return availableZones.find((zone) => (zone.face || 'front') === state.face) || null;
+    }
+
+    function updateOverlayFrame() {
+        const zone = getActiveZone();
+        const parent = overlay.parentElement.getBoundingClientRect();
+        const width = typeof zone?.width === 'number' ? zone.width : null;
+        const height = typeof zone?.height === 'number' ? zone.height : null;
+        const left = zone?.x ?? zone?.pos_x ?? 0.1;
+        const top = zone?.y ?? zone?.pos_y ?? 0.1;
+        const resolvedWidth = (width ?? 0.8) * 100;
+        const resolvedHeight = (height ?? 0.8) * 100;
+
+        overlay.style.left = `${Math.min(Math.max(0, left), 1) * 100}%`;
+        overlay.style.top = `${Math.min(Math.max(0, top), 1) * 100}%`;
+        overlay.style.width = `${Math.min(resolvedWidth, 100)}%`;
+        overlay.style.height = `${Math.min(resolvedHeight, 100)}%`;
+        overlay.style.right = 'auto';
+        overlay.style.bottom = 'auto';
+        overlay.style.borderRadius = `${Math.max(parent.width, parent.height) * 0.005}px`;
+    }
 
     function pushHistory() {
         state.history.push(JSON.parse(JSON.stringify(state.layers)));
@@ -136,6 +176,7 @@
     }
 
     function refresh() {
+        updateOverlayFrame();
         refreshLayerList();
         refreshOverlay();
         render2D();
@@ -170,6 +211,31 @@
                 refresh();
             });
         });
+    }
+
+    function bindProducts() {
+        const select = root.querySelector('[data-product-select]');
+        const apply = root.querySelector('[data-product-apply]');
+        if (!select) return;
+
+        const changeProduct = (index) => {
+            const parsedIndex = Number.isFinite(index) ? index : 0;
+            state.productIndex = Math.min(Math.max(0, parsedIndex), Math.max(0, products.length - 1));
+            loadProductModel(getActiveProduct());
+            refresh();
+        };
+
+        select.addEventListener('change', (e) => {
+            changeProduct(parseInt(e.target.value, 10));
+        });
+        apply?.addEventListener('click', () => {
+            changeProduct(parseInt(select.value, 10));
+        });
+
+        if (products.length) {
+            changeProduct(state.productIndex || 0);
+            select.value = String(state.productIndex || 0);
+        }
     }
 
     function bindUploads() {
@@ -417,11 +483,96 @@
         });
     }
 
+    let renderer = null;
+    let scene = null;
+    let camera = null;
+    let controls = null;
+    let mesh = null;
+    let textureRef = null;
+
+    function loadThreeExtras() {
+        const scripts = [];
+        if (!THREE.OrbitControls) {
+            scripts.push('https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/controls/OrbitControls.js');
+        }
+        if (!THREE.GLTFLoader) {
+            scripts.push('https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/GLTFLoader.js');
+        }
+        if (!THREE.OBJLoader) {
+            scripts.push('https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/loaders/OBJLoader.js');
+        }
+
+        if (!scripts.length) return Promise.resolve();
+
+        let loaded = 0;
+        return new Promise((resolve) => {
+            scripts.forEach((src) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => {
+                    loaded += 1;
+                    if (loaded === scripts.length) resolve();
+                };
+                document.head.appendChild(script);
+            });
+        });
+    }
+
+    function setMesh(object) {
+        if (mesh) {
+            scene.remove(mesh);
+        }
+        mesh = object;
+        scene.add(mesh);
+    }
+
+    function applyMaterial(object, material) {
+        object.traverse?.((child) => {
+            if (child.isMesh) {
+                child.material = material;
+                child.material.needsUpdate = true;
+            }
+        });
+    }
+
+    function fitObject(object) {
+        const box = new THREE.Box3().setFromObject(object);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const maxDimension = Math.max(size.x, size.y, size.z) || 1;
+        const scale = 1.4 / maxDimension;
+        object.scale.setScalar(scale);
+
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        object.position.sub(center.multiplyScalar(scale));
+
+        controls.target.copy(object.position.clone().add(new THREE.Vector3(0, size.y * scale * 0.25, 0)));
+        controls.update();
+    }
+
+    function buildMaterial() {
+        const material = new THREE.MeshStandardMaterial({
+            map: textureRef,
+            roughness: 0.6,
+            metalness: 0.05,
+        });
+        material.needsUpdate = true;
+        return material;
+    }
+
+    function fallbackMesh() {
+        const geometry = new THREE.BoxGeometry(1, 1.4, 0.6);
+        const meshPlaceholder = new THREE.Mesh(geometry, buildMaterial());
+        fitObject(meshPlaceholder);
+        setMesh(meshPlaceholder);
+    }
+
     function init3D() {
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(35, canvas3d.clientWidth / canvas3d.clientHeight, 0.1, 1000);
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(35, canvas3d.clientWidth / canvas3d.clientHeight, 0.1, 1000);
         camera.position.set(0, 1.5, 3);
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true, alpha: true });
+        renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true, alpha: true });
         renderer.setSize(canvas3d.clientWidth, canvas3d.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
 
@@ -430,15 +581,15 @@
         scene.add(light);
         scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
-        const geometry = new THREE.BoxGeometry(1, 1.4, 0.6);
-        const texture = new THREE.CanvasTexture(canvas2d);
-        const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.6, metalness: 0.05 });
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enablePan = true;
         controls.enableDamping = true;
+
+        textureRef = new THREE.CanvasTexture(canvas2d);
+        textureRef.flipY = false;
+        textureRef.needsUpdate = true;
+
+        fallbackMesh();
 
         function animate() {
             requestAnimationFrame(animate);
@@ -453,21 +604,44 @@
             camera.aspect = canvas3d.clientWidth / canvas3d.clientHeight;
             camera.updateProjectionMatrix();
         });
-
-        return texture;
     }
 
-    const threePromise = new Promise((resolve) => {
-        if (THREE.OrbitControls) {
-            return resolve();
+    function loadProductModel(product) {
+        if (!scene || !camera) return;
+        const material = buildMaterial();
+        if (!product?.file) {
+            fallbackMesh();
+            return;
         }
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/three@0.165.0/examples/js/controls/OrbitControls.js';
-        script.onload = resolve;
-        document.head.appendChild(script);
-    });
 
-    let textureRef = null;
+        const url = product.file.trim();
+        const extension = url.split('.').pop()?.toLowerCase();
+        const onError = () => fallbackMesh();
+
+        if (extension === 'glb' || extension === 'gltf') {
+            const loader = new THREE.GLTFLoader();
+            loader.load(url, (gltf) => {
+                const model = gltf.scene;
+                applyMaterial(model, material);
+                fitObject(model);
+                setMesh(model);
+            }, undefined, onError);
+            return;
+        }
+
+        if (extension === 'obj') {
+            const loader = new THREE.OBJLoader();
+            loader.load(url, (obj) => {
+                applyMaterial(obj, material);
+                fitObject(obj);
+                setMesh(obj);
+            }, undefined, onError);
+            return;
+        }
+
+        fallbackMesh();
+    }
+
     function update3DTexture() {
         if (textureRef) {
             textureRef.needsUpdate = true;
@@ -481,6 +655,9 @@
             const parsed = JSON.parse(saved);
             state.layers = parsed.layers || [];
             state.face = parsed.face || 'front';
+            if (typeof parsed.productIndex === 'number') {
+                state.productIndex = parsed.productIndex;
+            }
         } catch (e) {
             console.warn('Restore failed', e);
         }
@@ -497,8 +674,9 @@
     bindCart();
     restoreState();
 
-    threePromise.then(() => {
-        textureRef = init3D();
+    loadThreeExtras().then(() => {
+        init3D();
+        bindProducts();
         refresh();
     });
 })();

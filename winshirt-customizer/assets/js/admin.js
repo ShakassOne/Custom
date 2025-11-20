@@ -178,6 +178,22 @@
             scene.add(mesh);
         }
 
+        function fitObject(object) {
+            const box = new THREE.Box3().setFromObject(object);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            const maxDimension = Math.max(size.x, size.y, size.z) || 1;
+            const scale = 1.4 / maxDimension;
+            object.scale.setScalar(scale);
+
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+            object.position.sub(center.multiplyScalar(scale));
+
+            controls.target.copy(object.position.clone().add(new THREE.Vector3(0, size.y * scale * 0.25, 0)));
+            controls.update();
+        }
+
         function applyMaterial(object, material) {
             if (object.traverse) {
                 object.traverse((child) => {
@@ -224,6 +240,7 @@
                 loader.load(url, (gltf) => {
                     const model = gltf.scene;
                     applyMaterial(model, material);
+                    fitObject(model);
                     setMesh(model);
                 }, undefined, onError);
                 return;
@@ -233,6 +250,7 @@
                 const loader = new THREE.OBJLoader();
                 loader.load(url, (obj) => {
                     applyMaterial(obj, material);
+                    fitObject(obj);
                     setMesh(obj);
                 }, undefined, onError);
                 return;
