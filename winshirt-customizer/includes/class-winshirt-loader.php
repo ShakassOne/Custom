@@ -30,6 +30,29 @@ class Winshirt_Customizer_Loader
     {
         $version = WINSHIRT_CUSTOMIZER_VERSION;
         $placeholderDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2V7r8AAAAASUVORK5CYII=';
+
+        $settings = get_option('winshirt_customizer_settings', []);
+        $mockups3d = array_values(array_map(function ($item) {
+            return [
+                'name' => sanitize_text_field($item['name'] ?? ''),
+                'file' => esc_url_raw($item['file'] ?? ''),
+                'texture' => esc_url_raw($item['texture'] ?? ''),
+                'zones' => $item['zones'] ?? [],
+            ];
+        }, $settings['mockups3d'] ?? []));
+
+        $zones = array_values(array_filter(array_map(function ($zone) {
+            $zone = (array) $zone;
+            return [
+                'name' => sanitize_text_field($zone['name'] ?? ''),
+                'width' => floatval($zone['width'] ?? 0.35),
+                'height' => floatval($zone['height'] ?? 0.35),
+                'pos_x' => floatval($zone['pos_x'] ?? 0),
+                'pos_y' => floatval($zone['pos_y'] ?? 0),
+                'face' => sanitize_text_field($zone['face'] ?? ''),
+                'active' => !empty($zone['active']),
+            ];
+        }, $settings['zones'] ?? []), fn($zone) => !empty($zone['name']) && !empty($zone['active'])));
         wp_register_style(
             'winshirt-customizer-front',
             WINSHIRT_CUSTOMIZER_URL . 'assets/css/front.css',
@@ -56,6 +79,8 @@ class Winshirt_Customizer_Loader
             'nonce' => wp_create_nonce('winshirt_customizer_nonce'),
             'placeholderTexture' => $placeholderDataUrl,
             'exportDpi' => (int) get_option('winshirt_customizer_dpi', 300),
+            'mockups3d' => $mockups3d,
+            'zones' => $zones,
         ]);
 
         wp_enqueue_style('winshirt-customizer-front');

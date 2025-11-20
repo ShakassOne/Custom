@@ -1,6 +1,8 @@
 <?php
 /** @var array $settings */
 $theme_color = get_option('winshirt_customizer_settings')['theme_color'] ?? '#3b82f6';
+$settings = get_option('winshirt_customizer_settings', []);
+$mockups3d = $settings['mockups3d'] ?? [];
 ?>
 <div class="winshirt-customizer" data-theme-color="<?php echo esc_attr($theme_color); ?>">
     <div class="winshirt-topbar">
@@ -18,6 +20,22 @@ $theme_color = get_option('winshirt_customizer_settings')['theme_color'] ?? '#3b
     </div>
     <div class="winshirt-body">
         <aside class="winshirt-sidebar">
+            <div class="winshirt-product-panel">
+                <h3>Produit</h3>
+                <label for="winshirt-product-select">Sélectionner un mockup 3D</label>
+                <div class="winshirt-product-picker">
+                    <select id="winshirt-product-select" data-product-select>
+                        <?php foreach ($mockups3d as $index => $mockup) : ?>
+                            <option value="<?php echo esc_attr($index); ?>"><?php echo esc_html($mockup['name'] ?? ('Mockup ' . ($index + 1))); ?></option>
+                        <?php endforeach; ?>
+                        <?php if (empty($mockups3d)) : ?>
+                            <option value="">Aucun mockup configuré</option>
+                        <?php endif; ?>
+                    </select>
+                    <button class="winshirt-btn" type="button" data-product-apply>Charger</button>
+                </div>
+                <p class="winshirt-hint">Choisissez un produit pour activer son modèle 3D et ses zones d'impression. Déplacez la souris pour le faire tourner.</p>
+            </div>
             <div class="winshirt-tabs">
                 <button data-tab="images" class="active">📷 Images</button>
                 <button data-tab="svg">🧩 SVG</button>
@@ -85,6 +103,7 @@ $theme_color = get_option('winshirt_customizer_settings')['theme_color'] ?? '#3b
             <div class="winshirt-tab-content" data-tab="export" hidden>
                 <button class="winshirt-btn" data-action="export-screen">Export vue écran</button>
                 <button class="winshirt-btn" data-action="export-print">Export impression HD</button>
+                <button class="winshirt-btn" data-action="download-texture">Télécharger la texture</button>
                 <button class="winshirt-btn" data-action="export-3d">Capture 3D</button>
                 <button class="winshirt-btn" data-action="add-to-cart">Ajouter au panier</button>
             </div>

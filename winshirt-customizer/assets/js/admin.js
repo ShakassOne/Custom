@@ -65,6 +65,46 @@
 
             frame.open();
         });
+
+        $('.winshirt-upload-texture').off('click').on('click', function (e) {
+            e.preventDefault();
+            const button = $(this);
+            const input = button.closest('td').find('input[type="url"]');
+            const frame = wp.media({
+                title: 'Sélectionner une texture',
+                button: { text: 'Utiliser cette image' },
+                multiple: false,
+                library: {
+                    type: ['image/png', 'image/jpeg', 'image/webp']
+                }
+            });
+
+            frame.on('select', function () {
+                const attachment = frame.state().get('selection').first().toJSON();
+                if (attachment && attachment.url) {
+                    input.val(attachment.url).trigger('change');
+                }
+            });
+
+            frame.open();
+        });
+
+        $('.winshirt-download-texture').off('click').on('click', function (e) {
+            e.preventDefault();
+            const input = $(this).closest('td').find('input[type="url"]');
+            const url = input.val()?.trim();
+            if (!url) {
+                alert('Aucune texture disponible à télécharger.');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.download = url.split('/').pop() || 'texture.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
     }
 
     $(document).ready(function () {
@@ -178,6 +218,22 @@
             scene.add(mesh);
         }
 
+        function fitObject(object) {
+            const box = new THREE.Box3().setFromObject(object);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            const maxDimension = Math.max(size.x, size.y, size.z) || 1;
+            const scale = 1.4 / maxDimension;
+            object.scale.setScalar(scale);
+
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+            object.position.sub(center.multiplyScalar(scale));
+
+            controls.target.copy(object.position.clone().add(new THREE.Vector3(0, size.y * scale * 0.25, 0)));
+            controls.update();
+        }
+
         function applyMaterial(object, material) {
             if (object.traverse) {
                 object.traverse((child) => {
@@ -224,6 +280,7 @@
                 loader.load(url, (gltf) => {
                     const model = gltf.scene;
                     applyMaterial(model, material);
+                    fitObject(model);
                     setMesh(model);
                 }, undefined, onError);
                 return;
@@ -233,6 +290,7 @@
                 const loader = new THREE.OBJLoader();
                 loader.load(url, (obj) => {
                     applyMaterial(obj, material);
+                    fitObject(obj);
                     setMesh(obj);
                 }, undefined, onError);
                 return;

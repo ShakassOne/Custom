@@ -38,6 +38,13 @@
     background: #0b1224;
 }
 
+.winshirt-inline-actions {
+    margin-top: 6px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
 .winshirt-zone-overlay {
     position: absolute;
     inset: 0;
