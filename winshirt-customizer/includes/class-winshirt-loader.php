@@ -16,6 +16,7 @@ class Winshirt_Customizer_Loader
         add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_admin_assets']);
         add_action('admin_menu', [__CLASS__, 'register_admin_pages']);
         add_action('woocommerce_add_cart_item_data', [__CLASS__, 'inject_cart_metadata'], 10, 3);
+        add_filter('upload_mimes', [__CLASS__, 'allow_3d_uploads']);
     }
 
     public static function register_shortcodes(): void
@@ -65,6 +66,8 @@ class Winshirt_Customizer_Loader
         if (strpos($hook, 'winshirt-customizer') === false) {
             return;
         }
+
+        wp_enqueue_media();
 
         wp_enqueue_style(
             'winshirt-customizer-admin',
@@ -116,5 +119,14 @@ class Winshirt_Customizer_Loader
         ];
 
         return $cartItemData;
+    }
+
+    public static function allow_3d_uploads(array $mimes): array
+    {
+        $mimes['glb'] = 'model/gltf-binary';
+        $mimes['gltf'] = 'model/gltf+json';
+        $mimes['obj'] = 'model/obj';
+
+        return $mimes;
     }
 }

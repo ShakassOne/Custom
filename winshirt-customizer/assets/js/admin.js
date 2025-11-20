@@ -22,6 +22,7 @@
             });
             table.append(template);
             bindRemovers();
+            bindMediaUploaders();
         });
     }
 
@@ -37,8 +38,34 @@
         });
     }
 
+    function bindMediaUploaders() {
+        $('.winshirt-upload-3d').off('click').on('click', function (e) {
+            e.preventDefault();
+            const button = $(this);
+            const input = button.closest('td').find('input[type="url"]');
+            const frame = wp.media({
+                title: 'Sélectionner un fichier 3D',
+                button: { text: 'Utiliser ce fichier' },
+                multiple: false,
+                library: {
+                    type: ['model/gltf-binary', 'model/gltf+json', 'model/obj']
+                }
+            });
+
+            frame.on('select', function () {
+                const attachment = frame.state().get('selection').first().toJSON();
+                if (attachment && attachment.url) {
+                    input.val(attachment.url).trigger('change');
+                }
+            });
+
+            frame.open();
+        });
+    }
+
     $(document).ready(function () {
         bindRepeatables();
         bindRemovers();
+        bindMediaUploaders();
     });
 })(jQuery);
