@@ -22,7 +22,13 @@
                             <input type="url" name="winshirt_customizer_settings[mockups3d][<?php echo esc_attr($index); ?>][file]" value="<?php echo esc_url($mockup['file'] ?? ''); ?>" placeholder="URL GLB/GLTF/OBJ">
                             <button class="button winshirt-upload-3d" type="button">Choisir dans la médiathèque</button>
                         </td>
-                        <td><input type="url" name="winshirt_customizer_settings[mockups3d][<?php echo esc_attr($index); ?>][texture]" value="<?php echo esc_url($mockup['texture'] ?? ''); ?>" placeholder="URL PNG"></td>
+                        <td>
+                            <input type="url" name="winshirt_customizer_settings[mockups3d][<?php echo esc_attr($index); ?>][texture]" value="<?php echo esc_url($mockup['texture'] ?? ''); ?>" placeholder="URL PNG">
+                            <div class="winshirt-inline-actions">
+                                <button class="button winshirt-upload-texture" type="button">Choisir texture</button>
+                                <button class="button winshirt-download-texture" type="button">Télécharger</button>
+                            </div>
+                        </td>
                         <td class="winshirt-preview-cell">
                             <div class="winshirt-3d-config" data-zones="<?php echo esc_attr(wp_json_encode($mockup['zones'] ?? [])); ?>">
                                 <div class="winshirt-3d-viewer">

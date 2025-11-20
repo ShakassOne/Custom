@@ -65,6 +65,46 @@
 
             frame.open();
         });
+
+        $('.winshirt-upload-texture').off('click').on('click', function (e) {
+            e.preventDefault();
+            const button = $(this);
+            const input = button.closest('td').find('input[type="url"]');
+            const frame = wp.media({
+                title: 'Sélectionner une texture',
+                button: { text: 'Utiliser cette image' },
+                multiple: false,
+                library: {
+                    type: ['image/png', 'image/jpeg', 'image/webp']
+                }
+            });
+
+            frame.on('select', function () {
+                const attachment = frame.state().get('selection').first().toJSON();
+                if (attachment && attachment.url) {
+                    input.val(attachment.url).trigger('change');
+                }
+            });
+
+            frame.open();
+        });
+
+        $('.winshirt-download-texture').off('click').on('click', function (e) {
+            e.preventDefault();
+            const input = $(this).closest('td').find('input[type="url"]');
+            const url = input.val()?.trim();
+            if (!url) {
+                alert('Aucune texture disponible à télécharger.');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.download = url.split('/').pop() || 'texture.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
     }
 
     $(document).ready(function () {

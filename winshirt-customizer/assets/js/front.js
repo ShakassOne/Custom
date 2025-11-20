@@ -451,6 +451,12 @@
             download(url, 'winshirt-print.png');
         };
         root.querySelector('[data-action="export-print"]').addEventListener('click', exportPrint);
+
+        const exportTexture = () => {
+            const url = canvas2d.toDataURL('image/png');
+            download(url, 'winshirt-texture.png');
+        };
+        root.querySelector('[data-action="download-texture"]').addEventListener('click', exportTexture);
     }
 
     function download(url, filename) {

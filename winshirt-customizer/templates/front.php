@@ -103,6 +103,7 @@ $mockups3d = $settings['mockups3d'] ?? [];
             <div class="winshirt-tab-content" data-tab="export" hidden>
                 <button class="winshirt-btn" data-action="export-screen">Export vue écran</button>
                 <button class="winshirt-btn" data-action="export-print">Export impression HD</button>
+                <button class="winshirt-btn" data-action="download-texture">Télécharger la texture</button>
                 <button class="winshirt-btn" data-action="export-3d">Capture 3D</button>
                 <button class="winshirt-btn" data-action="add-to-cart">Ajouter au panier</button>
             </div>
