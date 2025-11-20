@@ -1,0 +1,12 @@
+.winshirt-admin .winshirt-table input,
+.winshirt-admin .winshirt-table select {
+    width: 100%;
+}
+
+.winshirt-admin .winshirt-table th {
+    font-weight: 600;
+}
+
+.winshirt-admin .winshirt-table .winshirt-remove {
+    color: #d93025;
+}
