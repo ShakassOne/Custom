@@ -57,11 +57,29 @@ class Winshirt_Customizer_Admin
             check_admin_referer('winshirt_customizer_settings');
             $settings['mockups3d'] = array_values(array_map(function ($item) {
                 $file = $item['file'] ?? $item['front'] ?? '';
+                $zones = json_decode(wp_unslash($item['zones'] ?? '[]'), true);
+
+                if (!is_array($zones)) {
+                    $zones = [];
+                }
+
+                $zones = array_values(array_map(function ($zone) {
+                    return [
+                        'id' => sanitize_text_field($zone['id'] ?? ($zone['label'] ?? '')),
+                        'label' => sanitize_text_field($zone['label'] ?? ($zone['id'] ?? '')),
+                        'x' => max(0, min(1, floatval($zone['x'] ?? 0))),
+                        'y' => max(0, min(1, floatval($zone['y'] ?? 0))),
+                        'width' => max(0.05, min(1, floatval($zone['width'] ?? 0.25))),
+                        'height' => max(0.05, min(1, floatval($zone['height'] ?? 0.25))),
+                        'face' => sanitize_text_field($zone['face'] ?? ''),
+                    ];
+                }, $zones));
 
                 return [
                     'name' => sanitize_text_field($item['name'] ?? ''),
                     'file' => esc_url_raw($file),
                     'texture' => esc_url_raw($item['texture'] ?? ''),
+                    'zones' => $zones,
                 ];
             }, $_POST['winshirt_customizer_settings']['mockups3d'] ?? []));
             $this->save_settings($settings);
