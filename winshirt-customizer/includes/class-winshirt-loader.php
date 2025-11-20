@@ -69,6 +69,14 @@ class Winshirt_Customizer_Loader
 
         wp_enqueue_media();
 
+        wp_enqueue_script(
+            'three',
+            'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.min.js',
+            [],
+            WINSHIRT_CUSTOMIZER_VERSION,
+            true
+        );
+
         wp_enqueue_style(
             'winshirt-customizer-admin',
             WINSHIRT_CUSTOMIZER_URL . 'assets/css/admin.css',
@@ -78,7 +86,7 @@ class Winshirt_Customizer_Loader
         wp_enqueue_script(
             'winshirt-customizer-admin',
             WINSHIRT_CUSTOMIZER_URL . 'assets/js/admin.js',
-            ['jquery'],
+            ['jquery', 'three'],
             WINSHIRT_CUSTOMIZER_VERSION,
             true
         );
